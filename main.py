@@ -349,35 +349,35 @@ def classification_with_tfidf_weighting(phraser, w2v_model, X, y):
 songs_df = prepare_clean_data(df)
 phraser, w2v_model = train_w2v_model()
 
-# print(w2v_model.wv.most_similar(positive=["boy"], negative=["man"]))
-# print(w2v_model.wv.most_similar(positive=["doctor"], negative=["man"]))
-# print(w2v_model.wv.most_similar(positive=["doctor"], negative=["woman"]))
-# print(w2v_model.wv.most_similar(positive=["love", "vodka"]))
-#
-# print(w2v_model.wv.most_similar(positive=["demon"]))
-# print(w2v_model.wv.most_similar(positive=["heaven"]))
-# print(w2v_model.wv.most_similar(positive=["best"]))
-#
-# print(w2v_model.wv.doesnt_match(["best", "good", "better", "god"]))
-#
-# sentiment_model = train_sentiment_model()
-#
-# predict_sentiment_for_new_tesrms(sentiment_model)
-#
-# relative_abundance_df = prepare_relative_abundance(songs_df)
-#
-# print(relative_abundance_df['Country'].sort_values(ascending=False)[:10])
-# print(relative_abundance_df['Metal'].sort_values(ascending=False)[:10])
-#
-# plot_tsne(relative_abundance_df)
-#
-# nb_classification_on_bow(songs_df)
+print(w2v_model.wv.most_similar(positive=["boy"], negative=["man"]))
+print(w2v_model.wv.most_similar(positive=["doctor"], negative=["man"]))
+print(w2v_model.wv.most_similar(positive=["doctor"], negative=["woman"]))
+print(w2v_model.wv.most_similar(positive=["love", "vodka"]))
+
+print(w2v_model.wv.most_similar(positive=["demon"]))
+print(w2v_model.wv.most_similar(positive=["heaven"]))
+print(w2v_model.wv.most_similar(positive=["best"]))
+
+print(w2v_model.wv.doesnt_match(["best", "good", "better", "god"]))
+
+sentiment_model = train_sentiment_model()
+
+predict_sentiment_for_new_tesrms(sentiment_model)
+
+relative_abundance_df = prepare_relative_abundance(songs_df)
+
+print(relative_abundance_df['Country'].sort_values(ascending=False)[:10])
+print(relative_abundance_df['Metal'].sort_values(ascending=False)[:10])
+
+plot_tsne(relative_abundance_df)
+
+nb_classification_on_bow(songs_df)
 
 X = songs_df.clean_lyrics.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
 y = songs_df.genre.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
 
-# classification_on_word_vectors(phraser, w2v_model, X, y)
-#
-# classification_with_tfidf_weighting(phraser, w2v_model, X, y)
+classification_on_word_vectors(phraser, w2v_model, X, y)
+
+classification_with_tfidf_weighting(phraser, w2v_model, X, y)
 
 
