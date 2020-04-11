@@ -395,6 +395,15 @@ if __name__ == '__main__':
     import torch.optim as optim
     import numpy as np
 
+    train_on_gpu = torch.cuda.is_available()
+
+    if train_on_gpu:
+        print(f"CUDA is available! Training on {torch.cuda.get_device_name(0)}...")
+        device = torch.device("cuda:0")
+    else:
+        print("CUDA is not available. Training on CPU...")
+        device = 'cpu'
+
 
     def clip_gradient(model, clip_value):
         params = list(filter(lambda p: p.grad is not None, model.parameters()))
@@ -405,19 +414,20 @@ if __name__ == '__main__':
     def train_model(model, X_train, y_train, epoch):
         total_epoch_loss = 0
         total_epoch_acc = 0
-        model.cuda()
+        if train_on_gpu:
+            model.cuda()
         optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
         steps = 0
         model.train()
         for idx, batch in enumerate(X_train):
             text = batch
             target = y_train[idx]
-            target = torch.autograd.Variable(target).long()
-            if torch.cuda.is_available():
+            target = torch.autograd.Variable(torch.LongTensor(target))
+            if train_on_gpu:
                 text = text.cuda()
                 target = target.cuda()
-            if (text.size()[0] is not 32):  # One of the batch returned by BucketIterator has length different than 32.
-                continue
+            # if (text.size()[0] is not 32):  # One of the batch returned by BucketIterator has length different than 32.
+            #     continue
             optim.zero_grad()
             prediction = model(text)
             loss = loss_fn(prediction, target)
@@ -449,7 +459,7 @@ if __name__ == '__main__':
                     continue
                 target = y_test[idx]
                 target = torch.autograd.Variable(target).long()
-                if torch.cuda.is_available():
+                if train_on_gpu:
                     text = text.cuda()
                     target = target.cuda()
                 prediction = model(text)
@@ -476,8 +486,8 @@ if __name__ == '__main__':
         if embedding_vector is not None:
             embedding_matrix[i] = embedding_vector
 
-    model = CNN(batch_size=500, output_size=10, in_channels=1, out_channels=256, kernel_heights=(3, 4, 5),
-              stride=1, padding=0, keep_probab=0.2, vocab_size=200000, embedding_length=300, weights=embedding_matrix)
+    model = CNN(batch_size=batch_size, output_size=10, in_channels=1, out_channels=25, kernel_heights=(3, 4, 5),
+                stride=1, padding=0, keep_probab=0.2, vocab_size=200000, embedding_length=300, weights=embedding_matrix)
 
     # net.forward([[w2v_model.wv.vocab[i].index for i in song.split()] for song in [
     #     " love cats dogs songs" * 32, " black metal rules corpse" * 32]])
@@ -492,15 +502,18 @@ if __name__ == '__main__':
         X_ind = []
         for song in X:
             l = [w2v_model.wv.vocab[i].index if i in w2v_model.wv else 0 for i in phraser[song.split()]][:128]
-            l + [0] * (128 - len(l))
+            l = l + [0] * (128 - len(l))
             X_ind.append(l)
         pickle.dump(X_ind, open(X_w2v_indexes_for_nn, "wb"))
     X_ind = pickle.load(open(X_w2v_indexes_for_nn, "br"))
-
-    X_train, X_test, y_train, y_test = train_test_split(X_ind, y, test_size=0.2, random_state=42)
+    generes_mapping = {'Pop': 1, 'Hip-Hop': 2, 'Rock': 3, 'Metal': 4, 'Country': 5, 'Jazz': 6, 'Electronic': 7,
+                       'Folk': 8, 'R&B': 9, 'Indie': 10}
+    y_ind = [generes_mapping.get(i, 0) for i in y]
+    X_train, X_test, y_train, y_test = train_test_split(X_ind, y_ind, test_size=0.2, random_state=42)
 
     for epoch in range(10):
-        train_loss, train_acc = train_model(model, X_train, y_train, epoch)
+        for i in range(0, len(X_train), batch_size):
+            train_loss, train_acc = train_model(model, X_train[i:i+batch_size], y_train[i:i+batch_size], epoch)
         val_loss, val_acc = eval_model(model, X_test, y_test)
 
         print(
