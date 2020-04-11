@@ -431,7 +431,7 @@ if __name__ == '__main__':
             optim.zero_grad()
             prediction = model(text)
             loss = loss_fn(prediction, target)
-            num_corrects = (torch.max(prediction, 1)[1].view(target.size()).data == target.data).float().sum()
+            num_corrects = (prediction.argmax(axis=1).data == target.data).sum()
             acc = 100.0 * num_corrects / len(text)
             loss.backward()
             clip_gradient(model, 1e-1)
@@ -454,17 +454,17 @@ if __name__ == '__main__':
         model.eval()
         with torch.no_grad():
             for idx in range(0, len(X_test), batch_size):
-                text = X_test[idx: idx + batch_size]
+                texts = X_test[idx: idx + batch_size]
                 target = y_test[idx: idx + batch_size]
                 target = torch.autograd.Variable(torch.LongTensor(target))
                 if train_on_gpu:
-                    text = text.cuda()
+                    texts = texts.cuda()
                     target = target.cuda()
 
-                prediction = model(text)
+                prediction = model(texts)
                 loss = loss_fn(prediction, target)
-                num_corrects = (torch.max(prediction, 1)[1].view(target.size()).data == target.data).sum()
-                acc = 100.0 * num_corrects / len(text)
+                num_corrects = (prediction.argmax(axis=1).data == target.data).sum()
+                acc = 100.0 * num_corrects / len(texts)
                 total_epoch_loss += loss.item()
                 total_epoch_acc += acc.item()
 
