@@ -33,8 +33,6 @@ class CNN(nn.Module):
         self.padding = padding
         self.vocab_size = vocab_size
         self.embedding_length = embedding_length
-        # >> > weight = torch.FloatTensor([[1, 2.3, 3], [4, 5.1, 6.3]])
-        # >> > embedding = nn.Embedding.from_pretrained(weight)
         self.word_embeddings = nn.Embedding.from_pretrained(torch.Tensor(weights))
         # self.word_embeddings.weight = nn.Parameter(torch.Tensor(weights), requires_grad=False)
         self.conv1 = nn.Conv2d(in_channels, out_channels, (kernel_heights[0], embedding_length), stride, padding)
@@ -73,7 +71,7 @@ class CNN(nn.Module):
 
         input = self.word_embeddings(torch.LongTensor(input_sentences))
         # input.size() = (batch_size, num_seq, embedding_length)
-        input = input.reshape(self.batch_size, 1, 128, self.embedding_length)
+        input = input.reshape(-1, 1, 128, self.embedding_length)
         # input.size() = (batch_size, 1, num_seq, embedding_length)
         max_out1 = self.conv_block(input, self.conv1)
         max_out2 = self.conv_block(input, self.conv2)
