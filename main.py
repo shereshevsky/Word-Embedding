@@ -422,11 +422,11 @@ if __name__ == '__main__':
 
         batches = range(0, len(X_train), batch_size)
         for idx in batches:
-            text = X_train[idx: idx + batch_size]
+            texts = X_train[idx: idx + batch_size]
             target = y_train[idx: idx + batch_size]
             target = torch.autograd.Variable(torch.LongTensor(target))
             if train_on_gpu:
-                text = text.cuda()
+                text = torch.FloatTensor(texts).cuda()
                 target = target.cuda()
 
             optim.zero_grad()
@@ -460,7 +460,7 @@ if __name__ == '__main__':
                 target = y_test[idx: idx + batch_size]
                 target = torch.autograd.Variable(torch.LongTensor(target))
                 if train_on_gpu:
-                    texts = texts.cuda()
+                    texts = torch.FloatTensor(texts).cuda()
                     target = target.cuda()
 
                 prediction = model(texts)

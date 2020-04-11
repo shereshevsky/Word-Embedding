@@ -71,7 +71,7 @@ class CNN(nn.Module):
 
         input = self.word_embeddings(torch.LongTensor(input_sentences))
         # input.size() = (batch_size, num_seq, embedding_length)
-        input = input.reshape(-1, 1, 128, self.embedding_length)
+        input = input.reshape(-1, 1, self.out_channels, self.embedding_length)
         # input.size() = (batch_size, 1, num_seq, embedding_length)
         max_out1 = self.conv_block(input, self.conv1)
         max_out2 = self.conv_block(input, self.conv2)
