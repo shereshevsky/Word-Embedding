@@ -419,20 +419,20 @@ if __name__ == '__main__':
         optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
         steps = 0
         model.train()
-        for idx, batch in enumerate(X_train):
-            text = batch
-            target = y_train[idx]
+
+        for idx in range(0, len(X_train), batch_size):
+            text = X_train[idx: idx + batch_size]
+            target = y_train[idx: idx + batch_size]
             target = torch.autograd.Variable(torch.LongTensor(target))
             if train_on_gpu:
                 text = text.cuda()
                 target = target.cuda()
-            # if (text.size()[0] is not 32):  # One of the batch returned by BucketIterator has length different than 32.
-            #     continue
+
             optim.zero_grad()
             prediction = model(text)
             loss = loss_fn(prediction, target)
             num_corrects = (torch.max(prediction, 1)[1].view(target.size()).data == target.data).float().sum()
-            acc = 100.0 * num_corrects / len(batch)
+            acc = 100.0 * num_corrects / len(text)
             loss.backward()
             clip_gradient(model, 1e-1)
             optim.step()
@@ -474,8 +474,7 @@ if __name__ == '__main__':
 
     learning_rate = 2e-5
     batch_size = 32
-    output_size = 2
-    hidden_size = 256
+    output_size = 11
     embedding_length = 300
 
     from cnn import CNN
@@ -486,13 +485,9 @@ if __name__ == '__main__':
         if embedding_vector is not None:
             embedding_matrix[i] = embedding_vector
 
-    model = CNN(batch_size=batch_size, output_size=10, in_channels=1, out_channels=25, kernel_heights=(3, 4, 5),
-                stride=1, padding=0, keep_probab=0.2, vocab_size=200000, embedding_length=300, weights=embedding_matrix)
+    model = CNN(batch_size=batch_size, output_size=output_size, in_channels=1, out_channels=128, kernel_heights=(3, 4, 5),
+                stride=1, padding=0, keep_probab=0.2, vocab_size=200000, embedding_length=embedding_length, weights=embedding_matrix)
 
-    # net.forward([[w2v_model.wv.vocab[i].index for i in song.split()] for song in [
-    #     " love cats dogs songs" * 32, " black metal rules corpse" * 32]])
-
-    # model = LSTMClassifier(batch_size, output_size, hidden_size, vocab_size, embedding_length, word_embeddings)
     loss_fn = F.cross_entropy
 
     y = list(songs_df[~df.genre.isin(['Not Available', 'Other'])].drop_duplicates().dropna().genre.values)
@@ -512,8 +507,7 @@ if __name__ == '__main__':
     X_train, X_test, y_train, y_test = train_test_split(X_ind, y_ind, test_size=0.2, random_state=42)
 
     for epoch in range(10):
-        for i in range(0, len(X_train), batch_size):
-            train_loss, train_acc = train_model(model, X_train[i:i+batch_size], y_train[i:i+batch_size], epoch)
+        train_loss, train_acc = train_model(model, X_train, y_train, epoch)
         val_loss, val_acc = eval_model(model, X_test, y_test)
 
         print(
