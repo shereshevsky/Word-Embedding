@@ -420,7 +420,8 @@ if __name__ == '__main__':
         steps = 0
         model.train()
 
-        for idx in range(0, len(X_train), batch_size):
+        batches = range(0, len(X_train), batch_size)
+        for idx in batches:
             text = X_train[idx: idx + batch_size]
             target = y_train[idx: idx + batch_size]
             target = torch.autograd.Variable(torch.LongTensor(target))
@@ -445,7 +446,7 @@ if __name__ == '__main__':
             total_epoch_loss += loss.item()
             total_epoch_acc += acc.item()
 
-        return total_epoch_loss / len(X_train), total_epoch_acc / len(X_train)
+        return total_epoch_loss / len(batches), total_epoch_acc / len(batches)
 
 
     def eval_model(model, X_test, y_test):
@@ -453,7 +454,8 @@ if __name__ == '__main__':
         total_epoch_acc = 0
         model.eval()
         with torch.no_grad():
-            for idx in range(0, len(X_test), batch_size):
+            batches = range(0, len(X_test), batch_size)
+            for idx in batches:
                 texts = X_test[idx: idx + batch_size]
                 target = y_test[idx: idx + batch_size]
                 target = torch.autograd.Variable(torch.LongTensor(target))
@@ -468,7 +470,7 @@ if __name__ == '__main__':
                 total_epoch_loss += loss.item()
                 total_epoch_acc += acc.item()
 
-        return total_epoch_loss / len(X_test), total_epoch_acc / len(X_test)
+        return total_epoch_loss / len(batches), total_epoch_acc / len(batches)
 
 
     learning_rate = 2e-5
