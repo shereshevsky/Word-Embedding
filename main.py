@@ -453,23 +453,22 @@ if __name__ == '__main__':
         total_epoch_acc = 0
         model.eval()
         with torch.no_grad():
-            for idx, batch in enumerate(X_test):
-                text = batch
-                if (text.size()[0] is not 32):
-                    continue
-                target = y_test[idx]
-                target = torch.autograd.Variable(target).long()
+            for idx in range(0, len(X_test), batch_size):
+                text = X_test[idx: idx + batch_size]
+                target = y_test[idx: idx + batch_size]
+                target = torch.autograd.Variable(torch.LongTensor(target))
                 if train_on_gpu:
                     text = text.cuda()
                     target = target.cuda()
+
                 prediction = model(text)
                 loss = loss_fn(prediction, target)
                 num_corrects = (torch.max(prediction, 1)[1].view(target.size()).data == target.data).sum()
-                acc = 100.0 * num_corrects / len(batch)
+                acc = 100.0 * num_corrects / len(text)
                 total_epoch_loss += loss.item()
                 total_epoch_acc += acc.item()
 
-        return total_epoch_loss / len(y_test), total_epoch_acc / len(y_test)
+        return total_epoch_loss / len(X_test), total_epoch_acc / len(X_test)
 
 
     learning_rate = 2e-5
