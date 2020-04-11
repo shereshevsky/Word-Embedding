@@ -33,17 +33,18 @@ pd.set_option("display.width", 1000)
 
 nlp = spacy.load('en_core_web_sm')
 nlp.add_pipe(LanguageDetector(), name='language_detector', last=True)
+text_in_brackets = re.compile("\[(.*?)\]")
 non_alpha = re.compile("[^A-Za-z']+")
 logging.basicConfig(format="%(levelname)s - %(asctime)s: %(message)s", datefmt='%H:%M:%S', level=logging.INFO)
 
-model_id = "model_4"
+model_id = "model_5"
 
 if not os.path.exists(f'data/{model_id}'):
     os.mkdir(f'data/{model_id}')
 clean_corpus_file = f'data/{model_id}/clean_texts.pkl'
 model_file = f'data/{model_id}/word2vec.model'
-bigrams_file = f'data/{model_id}/phrases'
-trigrams_file = f'data/{model_id}/phrases_2'
+bigrams_file = f'data/{model_id}/bigrams'
+trigrams_file = f'data/{model_id}/trigrams'
 vocabulary_file = f'data/{model_id}/vocabulary'
 predicted_sentiment_file = f"data/{model_id}/predicted_sentiment.txt"
 genre_counts_file = f"data/{model_id}/genre_counts.txt"
@@ -64,15 +65,19 @@ sentiment_terms = ['_'.join(i.split(' ')).replace("'", "_'_") for i in sentiment
 
 def prepare_clean_data(songs_df: pd.DataFrame) -> pd.DataFrame:
     if not Path(clean_corpus_file).exists():
-        def cleaning(doc):
+        def cleaning(i, doc):
+            if i % 10000 == 0:
+                print(f"cleaning data: song {i} / {df.shape[0]} - {round(i/df.shape[0], 2)*100}%")
+            if not doc._.language["language"] == "en":
+                return
             _txt = [token.text for token in doc if not token.is_stop]  # tokenize, remove stopwords, lowercase
-            if len(_txt) > 2 and doc._.language["language"] == "en":
+            if len(_txt) > 2:
                 return ' '.join(_txt)
 
-        brief_cleaning = (non_alpha.sub(' ', str(row)).lower() for row in songs_df.lyrics)  # Remove any non-alpha words
-
+        # Remove any non-alpha words and text in square brackets
+        brief_cleaning = (non_alpha.sub(' ', text_in_brackets.sub(' ', str(row))).lower() for row in songs_df.lyrics)
         t = time()
-        texts = [cleaning(doc) for doc in nlp.pipe(brief_cleaning, batch_size=5000, n_threads=6)]
+        texts = [cleaning(i, doc) for i, doc in enumerate(nlp.pipe(brief_cleaning, batch_size=6000, n_threads=16))]
         pickle.dump(texts, open(clean_corpus_file, 'wb'))
         print('Time to clean up everything: {} mins'.format(round((time() - t) / 60, 2)))
 
@@ -346,38 +351,41 @@ def classification_with_tfidf_weighting(phraser, w2v_model, X, y):
           sum(clf.predict(test_transformed) == y_test) / len(y_test))
 
 
-songs_df = prepare_clean_data(df)
-phraser, w2v_model = train_w2v_model()
+if __name__ == '__main__':
 
-print(w2v_model.wv.most_similar(positive=["boy"], negative=["man"]))
-print(w2v_model.wv.most_similar(positive=["doctor"], negative=["man"]))
-print(w2v_model.wv.most_similar(positive=["doctor"], negative=["woman"]))
-print(w2v_model.wv.most_similar(positive=["love", "vodka"]))
+    songs_df = prepare_clean_data(df)
+    phraser, w2v_model = train_w2v_model()
 
-print(w2v_model.wv.most_similar(positive=["demon"]))
-print(w2v_model.wv.most_similar(positive=["heaven"]))
-print(w2v_model.wv.most_similar(positive=["best"]))
+    print(w2v_model.wv.most_similar(positive=["boy"], negative=["man"]))
+    print(w2v_model.wv.most_similar(positive=["doctor"], negative=["man"]))
+    print(w2v_model.wv.most_similar(positive=["doctor"], negative=["woman"]))
+    print(w2v_model.wv.most_similar(positive=["love", "vodka"]))
 
-print(w2v_model.wv.doesnt_match(["best", "good", "better", "god"]))
+    print(w2v_model.wv.most_similar(positive=["demon"]))
+    print(w2v_model.wv.most_similar(positive=["heaven"]))
+    print(w2v_model.wv.most_similar(positive=["best"]))
 
-sentiment_model = train_sentiment_model()
+    print(w2v_model.wv.doesnt_match(["best", "good", "better", "god"]))
 
-predict_sentiment_for_new_tesrms(sentiment_model)
+    print("train sentiment")
+    sentiment_model = train_sentiment_model()
 
-relative_abundance_df = prepare_relative_abundance(songs_df)
+    predict_sentiment_for_new_tesrms(sentiment_model)
 
-print(relative_abundance_df['Country'].sort_values(ascending=False)[:10])
-print(relative_abundance_df['Metal'].sort_values(ascending=False)[:10])
+    relative_abundance_df = prepare_relative_abundance(songs_df)
 
-plot_tsne(relative_abundance_df)
+    print(relative_abundance_df['Country'].sort_values(ascending=False)[:10])
+    print(relative_abundance_df['Metal'].sort_values(ascending=False)[:10])
 
-nb_classification_on_bow(songs_df)
+    plot_tsne(relative_abundance_df)
 
-X = songs_df.clean_lyrics.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
-y = songs_df.genre.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
+    nb_classification_on_bow(songs_df)
 
-classification_on_word_vectors(phraser, w2v_model, X, y)
+    X = songs_df.clean_lyrics.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
+    y = songs_df.genre.values[~songs_df.genre.isin(['Not Available', 'Other']) & ~songs_df.clean_lyrics.isnull()]
 
-classification_with_tfidf_weighting(phraser, w2v_model, X, y)
+    classification_on_word_vectors(phraser, w2v_model, X, y)
+
+    classification_with_tfidf_weighting(phraser, w2v_model, X, y)
 
 
