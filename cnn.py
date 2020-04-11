@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 class CNN(nn.Module):
     def __init__(self, batch_size, output_size, in_channels, out_channels, kernel_heights, stride, padding, keep_probab,
-                 vocab_size, embedding_length, weights):
+                 vocab_size, embedding_length, weights, train_w2v_weights):
         super(CNN, self).__init__()
 
         """
@@ -34,7 +34,7 @@ class CNN(nn.Module):
         self.vocab_size = vocab_size
         self.embedding_length = embedding_length
         self.word_embeddings = nn.Embedding(vocab_size, embedding_length)
-        self.word_embeddings.weight = nn.Parameter(torch.Tensor(weights), requires_grad=False)
+        self.word_embeddings.weight = nn.Parameter(torch.Tensor(weights), requires_grad=train_w2v_weights)
         self.conv1 = nn.Conv2d(in_channels, out_channels, (kernel_heights[0], embedding_length), stride, padding)
         self.conv2 = nn.Conv2d(in_channels, out_channels, (kernel_heights[1], embedding_length), stride, padding)
         self.conv3 = nn.Conv2d(in_channels, out_channels, (kernel_heights[2], embedding_length), stride, padding)
