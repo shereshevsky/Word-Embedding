@@ -415,7 +415,7 @@ if __name__ == '__main__':
         total_epoch_loss = 0
         total_epoch_acc = 0
         if train_on_gpu:
-            model.cuda()
+            model.to(device)
         optim = torch.optim.Adam(filter(lambda p: p.requires_grad, model.parameters()))
         steps = 0
         model.train()
@@ -426,8 +426,8 @@ if __name__ == '__main__':
             target = y_train[idx: idx + batch_size]
             target = torch.autograd.Variable(torch.LongTensor(target))
             if train_on_gpu:
-                text = torch.FloatTensor(texts).cuda()
-                target = target.cuda()
+                text = torch.FloatTensor(texts).to(device)
+                target = target.to(device)
 
             optim.zero_grad()
             prediction = model(text)
@@ -460,8 +460,8 @@ if __name__ == '__main__':
                 target = y_test[idx: idx + batch_size]
                 target = torch.autograd.Variable(torch.LongTensor(target))
                 if train_on_gpu:
-                    texts = torch.FloatTensor(texts).cuda()
-                    target = target.cuda()
+                    texts = torch.FloatTensor(texts).to(device)
+                    target = target.to(device)
 
                 prediction = model(texts)
                 loss = loss_fn(prediction, target)
