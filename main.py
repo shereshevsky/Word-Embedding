@@ -486,7 +486,7 @@ if __name__ == '__main__':
         if embedding_vector is not None:
             embedding_matrix[i] = embedding_vector
 
-    model = CNN(batch_size=batch_size, output_size=output_size, in_channels=1, out_channels=256, kernel_heights=(3, 4, 5),
+    model = CNN(batch_size=batch_size, output_size=output_size, in_channels=1, out_channels=128, kernel_heights=(3, 4, 5),
                 stride=1, padding=0, keep_probab=0.2, vocab_size=200000, embedding_length=embedding_length, weights=embedding_matrix)
 
     loss_fn = F.cross_entropy
