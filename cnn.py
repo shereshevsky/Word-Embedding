@@ -33,8 +33,8 @@ class CNN(nn.Module):
         self.padding = padding
         self.vocab_size = vocab_size
         self.embedding_length = embedding_length
-        self.word_embeddings = nn.Embedding.from_pretrained(torch.Tensor(weights))
-        # self.word_embeddings.weight = nn.Parameter(torch.Tensor(weights), requires_grad=False)
+        self.word_embeddings = nn.Embedding(vocab_size, embedding_length)
+        self.word_embeddings.weight = nn.Parameter(torch.Tensor(weights), requires_grad=False)
         self.conv1 = nn.Conv2d(in_channels, out_channels, (kernel_heights[0], embedding_length), stride, padding)
         self.conv2 = nn.Conv2d(in_channels, out_channels, (kernel_heights[1], embedding_length), stride, padding)
         self.conv3 = nn.Conv2d(in_channels, out_channels, (kernel_heights[2], embedding_length), stride, padding)

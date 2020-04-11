@@ -426,14 +426,14 @@ if __name__ == '__main__':
             target = y_train[idx: idx + batch_size]
             target = torch.autograd.Variable(torch.LongTensor(target))
             if train_on_gpu:
-                text = torch.FloatTensor(texts).to(device)
+                texts = torch.FloatTensor(texts).to(device)
                 target = target.to(device)
 
             optim.zero_grad()
-            prediction = model(text)
+            prediction = model(texts)
             loss = loss_fn(prediction, target)
             num_corrects = (prediction.argmax(axis=1).data == target.data).sum()
-            acc = 100.0 * num_corrects / len(text)
+            acc = 100.0 * num_corrects / len(texts)
             loss.backward()
             clip_gradient(model, 1e-1)
             optim.step()
